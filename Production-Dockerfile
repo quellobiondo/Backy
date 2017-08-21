@@ -7,12 +7,6 @@
 # Pull base image.
 FROM dockerfile/python
 
-# Install Python.
-RUN \
-  apt-get update && \
-  apt-get install -y python python-dev python-pip python-virtualenv && \
-  rm -rf /var/lib/apt/lists/*
-
 # Install ZFS
 RUN \
   apt-get update && \
