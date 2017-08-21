@@ -5,15 +5,38 @@
 #
 
 # Pull base image.
-FROM dockerfile/python
+FROM ubuntu:16.04
 
 # Install ZFS
-RUN \
-  apt-get update && \
-  apt-get install -y zfsutils-linux
-  
+RUN apt-get update && apt-get install -y zfsutils-linux
+
+# Install Sanoid, git, Python
+RUN apt-get install -y \
+	git \
+	libconfig-inifiles-perl \
+	init \
+	lzop \
+	mbuffer \
+	python \
+	python-pip \
+	python-dev \
+	build-essential \
+	cron
+
 # Define working directory.
-WORKDIR /
+WORKDIR /opt/
+
+RUN git clone https://github.com/jimsalterjrs/sanoid
+
+WORKDIR /opt/sanoid/
+
+RUN mkdir -p /etc/sanoid && cp sanoid*.conf /etc/sanoid/ 
+
+RUN pip install --upgrade pip
+
+COPY . .
+
+RUN pip install -r requirements.txt
 
 # Define default command.
-CMD ["bash"]
+CMD ["python", "configure.py"]
