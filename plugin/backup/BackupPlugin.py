@@ -19,7 +19,10 @@ class BackupPlugin(object):
     def __init__(self, cons, snapshot_driver):
         self.kv = cons.kv
         self.driver = snapshot_driver
-        self.node = cons.agent.self()["Member"]
+        self.node = {
+            "Name": cons.agent.self()["Member"]["Name"],
+            "Address": cons.agent.self()["Member"]["Addr"]
+        }
 
     def load_config(self):
         return {
@@ -34,16 +37,19 @@ class BackupPlugin(object):
         index, value = self.kv.get('snapshots')
 
         # TODO: remove all the snapshots removed by this node
+        if not value:
+            value = {"Value": ""}
+
         all_snapshots = value["Value"]
-        if not all_snapshots:
+        if all_snapshots:
             # stringa vuota
-            all_snapshots = json.load(all_snapshots)
+            all_snapshots = json.loads(all_snapshots.decode('utf-8'))
         else:
             all_snapshots = []
 
         new_snapshot = {
             "dataset": dataset,
-            "date": datetime.now().timestamp(),
+            "date": str(datetime.now()),
             "nodo": self.node
         }
 
