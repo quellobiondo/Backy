@@ -1,2 +1,4 @@
 toml
 python-crontab
+python-consul
+argparse

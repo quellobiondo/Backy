@@ -30,7 +30,7 @@ RUN git clone https://github.com/jimsalterjrs/sanoid
 
 WORKDIR /opt/sanoid/
 
-RUN mkdir -p /etc/sanoid && cp sanoid*.conf /etc/sanoid/ 
+RUN mkdir -p /etc/sanoid && cp sanoid*.conf /etc/sanoid/
 
 RUN pip install --upgrade pip
 
@@ -39,4 +39,6 @@ COPY . .
 RUN pip install -r requirements.txt
 
 # Define default command.
-CMD ["python", "configure.py"]
+ENTRYPOINT ["python", "configure.py"]
+
+CMD ["production"]
