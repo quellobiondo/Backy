@@ -34,6 +34,8 @@ RUN mkdir -p /etc/sanoid && cp sanoid*.conf /etc/sanoid/
 
 RUN pip3 install --upgrade pip
 
+WORKDIR /opt/backy/
+
 COPY . .
 
 RUN pip3 install -r requirements.txt

@@ -4,12 +4,14 @@
 Backy: Backup as a service based on ZFS for containerized applications.
 """
 
+import argparse
+import logging
+import sys
+
 import os
 from crontab import CronTab
-import sys
-from .plugin.backup.BackupPlugin import BackupPlugin
-import logging
-import argparse
+
+from plugin.backup.BackupPlugin import BackupPlugin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -53,7 +55,7 @@ def configure(args):
 
     BackupPlugin.factory().apply_backup_policy(settings)
 
-    activate_backups(os.path.abspath(os.path.dirname(sys.argv[0]))+sys.argv[0]+" snapshot")
+    activate_backups(os.path.abspath(os.path.dirname(sys.argv[0])) + "/" + sys.argv[0] + " snapshot")
     print("Press ENTER to end")
     input()
 
