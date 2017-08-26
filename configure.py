@@ -7,7 +7,7 @@ Backy: Backup as a service based on ZFS for containerized applications.
 import os
 from crontab import CronTab
 import sys
-from plugin.backup.BackupPlugin import BackupPlugin
+from .plugin.backup.BackupPlugin import BackupPlugin
 import logging
 import argparse
 
@@ -37,7 +37,7 @@ def activate_backups(binary):
     logging.debug("Activating automatic backup")
 
     backup_job = CronTab(user='root')
-    job = backup_job.new(command="/usr/bin/python " + binary)
+    job = backup_job.new(command="/usr/bin/python3 " + binary)
     job.minute.every(1)
     backup_job.write()
 
@@ -49,11 +49,11 @@ def configure(args):
         logger.setLevel(logging.DEBUG)
 
     logger.debug(args)
-    settings = setup(args.backups, args.type, args.dataset)
+    settings = setup(args.backups.split(' '), args.type, args.dataset)
 
     BackupPlugin.factory().apply_backup_policy(settings)
 
-    activate_backups(os.path.abspath(os.path.dirname(sys.argv[0])) + " snapshot")
+    activate_backups(os.path.abspath(os.path.dirname(sys.argv[0]))+sys.argv[0]+" snapshot")
     print("Press ENTER to end")
     input()
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     parser_configure = subparsers.add_parser('configure')
     parser_configure.add_argument("type", choices=['production', 'backup'])
-    parser_configure.add_argument("--backups", type=check_backups_args, default="10,5,2,0")
+    parser_configure.add_argument("--backups", type=check_backups_args, default="10 5 2 0")
     parser_configure.add_argument("dataset", type=check_dataset)
 
     parser_snapshot = subparsers.add_parser('snapshot')

@@ -6,6 +6,7 @@
 Backup plugin based on Sanoid, tool for ZFS
 """
 
+from subprocess import call
 
 class SanoidBackupPlugin(object):
 
@@ -13,7 +14,7 @@ class SanoidBackupPlugin(object):
         self.binary = binary
 
     def take_snapshot(self):
-        pass
+        call([self.binary])
 
     def apply_backup_policy(self, policy):
         with open('/etc/sanoid/sanoid.conf', 'w') as out:
@@ -39,4 +40,4 @@ class SanoidBackupPlugin(object):
         	""".format(**policy))
 
     def get_snapshots(self):
-        pass
+        return "Mock-snapshot"

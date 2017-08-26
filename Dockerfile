@@ -17,9 +17,9 @@ RUN apt-get install -y \
 	init \
 	lzop \
 	mbuffer \
-	python \
-	python-pip \
-	python-dev \
+	python3 \
+	python3-pip \
+	python3-dev \
 	build-essential \
 	cron
 
@@ -32,13 +32,13 @@ WORKDIR /opt/sanoid/
 
 RUN mkdir -p /etc/sanoid && cp sanoid*.conf /etc/sanoid/
 
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade pip
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Define default command.
-ENTRYPOINT ["python", "configure.py"]
+ENTRYPOINT ["python3", "configure.py", "configure"]
 
-CMD ["production"]
+CMD ["production", "zpool-docker/myapp"]
