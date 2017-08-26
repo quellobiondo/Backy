@@ -21,13 +21,13 @@ class BackupPlugin(object):
 
     def take_snapshot(self):
         self.driver.take_snapshot()
-        self.kv.put('snapshot', self.get_snapshot())
+        self.kv.put('snapshot/myapp', self.get_snapshot())
 
     def apply_backup_policy(self, policy):
-        pass
+        self.driver.apply_backup_policy(policy)
 
     def get_snapshot(self):
-        pass
+        return self.driver.get_snapshots()
 
     @staticmethod
     def factory():
