@@ -36,6 +36,8 @@ RUN pip3 install --upgrade pip
 
 WORKDIR /opt/backy/
 
+RUN mkdir -p /etc/backy
+
 COPY . .
 
 RUN pip3 install -r requirements.txt
