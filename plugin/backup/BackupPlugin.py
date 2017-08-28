@@ -45,26 +45,26 @@ class BackupPlugin(object):
 
     def syncronize_snapshots(self, local_snaps, remote_snaps, server_name):
         for rem in remote_snaps:
-            for local in local_snaps:
-                if local[rem.tag]:
-                    # Esiste in locale lo snapshot con il tag rem.tag
-                    if server_name not in rem.server:
-                        rem.server.append(server_name)
-                else:
-                    # Non esiste più lo snapshot
-                    if server_name in rem.server:
-                        rem.server.remove(server_name)
+            if local_snaps[rem]:
+                # Esiste in locale lo snapshot con il tag rem.tag
+                if server_name not in remote_snaps[rem]["server"]:
+                    remote_snaps[rem]["server"].append(server_name)
+            else:
+                # Non esiste più lo snapshot
+                if server_name in remote_snaps[rem]["server"]:
+                    remote_snaps[rem]["server"].remove(server_name)
 
         for new_snap in [x for x in local_snaps.keys() if x not in remote_snaps.keys()]:
             remote_snaps[new_snap] = local_snaps[new_snap]
             remote_snaps[new_snap]["server"] = [server_name]
+
         return remote_snaps
 
     def get_latest_snapshot(self, snaps):
         latest = None
         for sn in snaps:
-            if latest is None or int(latest.date) < int(sn.date):
-                latest = sn
+            if latest is None or int(latest["date"]) < int(snaps[sn]["date"]):
+                latest = snaps[sn]
         return latest
 
     def retrieve_remote_snapshot_metadata(self):
@@ -88,13 +88,15 @@ class BackupPlugin(object):
         sync_result = self.syncronize_snapshots(local_snapshots, all_snapshots, self.node["Name"])
         self.kv.put('snapshots/myapp', json.dumps(sync_result))
 
-        latest_snap = self.get_latest_snapshot(sync_result)
-        self.kv.put('services/myapp', latest_snap.tag)
-        self.kv.put('nodes/%s' % (self.node("Name")),
+        latest_snap, content = self.get_latest_snapshot(sync_result)
+        self.kv.put('services/myapp', latest_snap)
+        self.kv.put('nodes/%s' % (self.node["Name"]),
+                    json.dumps(
                     {
                         "type": "production",
-                        "backups": json.dump(local_snapshots)
+                        "backups": local_snapshots
                     })
+                    )
 
     def apply_backup_policy(self, policy):
         self.driver.apply_backup_policy(policy)

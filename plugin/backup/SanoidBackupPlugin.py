@@ -29,7 +29,7 @@ class SanoidBackupPlugin(object):
 
     def apply_backup_policy(self, policy):
         with open('/etc/backy/backy.conf', 'w') as out:
-            out.write(json.dump(policy))
+            json.dump(policy, out)
 
         with open('/etc/sanoid/sanoid.conf', 'w') as out:
             out.write("""
@@ -56,11 +56,10 @@ class SanoidBackupPlugin(object):
     def get_snapshots(self):
         datasets = ["zpool-docker/myapp"]
 
-        snaps = []
+        snaps = {}
         for dataset in datasets:
             for snap in zfs.open(dataset).snapshots():
-                snaps.append({
-                    "tag": snap.name,
+                snaps[snap.name] = {
                     "date": snap.getprop("creation")["value"]
-                })
+                }
         return snaps

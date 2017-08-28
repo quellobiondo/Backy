@@ -88,8 +88,8 @@ if __name__ == "__main__":
     parser_configure.add_argument("dataset", type=check_dataset)
 
     parser_snapshot = subparsers.add_parser('snapshot')
-    parser_configure.add_argument("--name", default="")
-    parser_configure.add_argument("--dataset", type=check_dataset, default="")
+    parser_snapshot.add_argument("--name", default="")
+    parser_snapshot.add_argument("--dataset", type=check_dataset, default="")
 
     args = parser.parse_args()
 
