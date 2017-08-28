@@ -63,8 +63,8 @@ class BackupPlugin(object):
     def get_latest_snapshot(self, snaps):
         latest = None
         for sn in snaps:
-            if latest is None or int(latest["date"]) < int(snaps[sn]["date"]):
-                latest = snaps[sn]
+            if latest is None or int(snaps[latest]["date"]) < int(snaps[sn]["date"]):
+                latest = sn
         return latest
 
     def retrieve_remote_snapshot_metadata(self):
@@ -88,7 +88,7 @@ class BackupPlugin(object):
         sync_result = self.syncronize_snapshots(local_snapshots, all_snapshots, self.node["Name"])
         self.kv.put('snapshots/myapp', json.dumps(sync_result))
 
-        latest_snap, content = self.get_latest_snapshot(sync_result)
+        latest_snap = self.get_latest_snapshot(sync_result)
         self.kv.put('services/myapp', latest_snap)
         self.kv.put('nodes/%s' % (self.node["Name"]),
                     json.dumps(
