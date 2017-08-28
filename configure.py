@@ -64,7 +64,7 @@ def take_snapshot(args):
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     logger.debug("Take backup")
-    BackupPlugin.factory().take_snapshot(True)
+    BackupPlugin.factory().take_snapshot(args.name, args.dataset)
 
 def check_backups_args(string):
     return string
@@ -88,6 +88,8 @@ if __name__ == "__main__":
     parser_configure.add_argument("dataset", type=check_dataset)
 
     parser_snapshot = subparsers.add_parser('snapshot')
+    parser_configure.add_argument("--name", default="")
+    parser_configure.add_argument("--dataset", type=check_dataset, default="")
 
     args = parser.parse_args()
 
