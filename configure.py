@@ -64,7 +64,7 @@ def take_snapshot(args):
     if args.verbose:
         logger.setLevel(logging.DEBUG)
     logger.debug("Take backup")
-    BackupPlugin.factory().take_snapshot(args.name, args.dataset)
+    BackupPlugin.factory().take_snapshot(args.dataset, args.name)
 
 def check_backups_args(string):
     return string
