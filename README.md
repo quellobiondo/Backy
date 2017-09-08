@@ -1,9 +1,29 @@
 # Backy
 Distributed backup system for containerized systems.
 
-#### Usage
-- TYPE: production or backup
-- BACKUPS: "number of hourly backups, n° of daily backups, n° of monthly backups, n° of yearly backups"
-- DATASET: "the ZFS dataset to use"
+# Usage 
+Backy container has to execute as --privileged (because of ZFS).
 
-`docker run -it --env DATASET=tank/myapp --env TYPE=production --env BACKUPS="10, 5, 2, 1" --name backy-service --privileged ziro/backy:first`
+--- CONSUL
+
+execute server
+docker run -d --name consul-server --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' -e 'CONSUL_HTTP_ADDR=192.168.33.105:8500' consul agent -server -bind=192.168.33.105 -bootstrap -ui -client=192.168.33.105
+
+execute client
+docker run -d --net=host -e 'CONSUL_LOCAL_CONFIG={"leave_on_terminate": true}' --name consul_client consul agent -bind=192.168.33.102 -retry-join=192.168.33.105
+
+Service autodiscovery -- registrator
+```
+docker run -d \
+    --name=registrator \
+    --net=host \
+    --volume=/var/run/docker.sock:/tmp/docker.sock \
+    gliderlabs/registrator:latest \
+      consul://localhost:8500
+```
+execute Backy from docker
+```
+docker build -t backy-service .
+docker run -d -it --name backy --net=host --privileged backy-service production zpool-docker/myapp
+docker exec -it backy /bin/bash
+```
