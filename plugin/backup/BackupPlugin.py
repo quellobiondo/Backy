@@ -1,9 +1,9 @@
 #! /bin/usr/python
 
-import json
-
 import consul
 
+from plugin.backup.KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list
+from plugin.backup.Utils import dataset_name, get_latest_snapshot
 from .SanoidBackupPlugin import SanoidBackupPlugin
 
 """
@@ -15,103 +15,59 @@ Generic backup plugin
 
 
 class BackupPlugin(object):
-    def __init__(self, cons, snapshot_driver):
-        self.kv = cons.kv
+    def __init__(self, kv, node, snapshot_driver):
+        self.kv = kv
         self.driver = snapshot_driver
-        self.node = {
-            "Name": cons.agent.self()["Member"]["Name"],
-            "Address": cons.agent.self()["Member"]["Addr"]
-        }
+        self.node = node
 
-    def load_config(self):
-        return {
-            "zpool-docker/myapp":
-                {
-                    "production": {
-                        "hourly": 10,
-                        "daily": 5,
-                        "weekly": 1,
-                        "yearly": 0,
-                        "frequency": 30
-                    },
-                    "backup": {
-                        "hourly": 10,
-                        "daily": 5,
-                        "weekly": 2,
-                        "yearly": 1
-                    }
-                }
-        }
+    def get_remote_snapshots(self, service):
+        return retrieve_remote_snapshot_metadata(self.kv, service)
 
-    def syncronize_snapshots(self, local_snaps, remote_snaps, server_name):
-        for rem in remote_snaps:
-            if local_snaps[rem]:
-                # Esiste in locale lo snapshot con il tag rem.tag
-                if server_name not in remote_snaps[rem]["server"]:
-                    remote_snaps[rem]["server"].append(server_name)
-            else:
-                # Non esiste più lo snapshot
-                if server_name in remote_snaps[rem]["server"]:
-                    remote_snaps[rem]["server"].remove(server_name)
+    def take_snapshot(self, service, name=None):
+        self.driver.take_snapshot(dataset_name(service), name)
+        update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service))
 
-        for new_snap in [x for x in local_snaps.keys() if x not in remote_snaps.keys()]:
-            remote_snaps[new_snap] = local_snaps[new_snap]
-            remote_snaps[new_snap]["server"] = [server_name]
-
-        return remote_snaps
-
-    def get_latest_snapshot(self, snaps):
-        latest = None
-        for sn in snaps:
-            if latest is None or int(snaps[latest]["date"]) < int(snaps[sn]["date"]):
-                latest = sn
-        return latest
-
-    def retrieve_remote_snapshot_metadata(self):
-        index, value = self.kv.get('snapshots/myapp')
-        if not value:
-            value = {"Value": ""}
-
-        all_snapshots = value["Value"]
-        if all_snapshots:
-            # stringa vuota
-            all_snapshots = json.loads(all_snapshots.decode('utf-8'))
-        else:
-            all_snapshots = {}
-        return all_snapshots
-
-    def take_snapshot(self, dataset=None, name=None):
-        self.driver.take_snapshot(dataset, name)
-
-        all_snapshots = self.retrieve_remote_snapshot_metadata()
-        local_snapshots = self.driver.get_snapshots()
-        sync_result = self.syncronize_snapshots(local_snapshots, all_snapshots, self.node["Name"])
-        self.kv.put('snapshots/myapp', json.dumps(sync_result))
-
-        latest_snap = self.get_latest_snapshot(sync_result)
-        self.kv.put('services/myapp', latest_snap)
-        self.kv.put('nodes/%s' % (self.node["Name"]),
-                    json.dumps(
-                    {
-                        "type": "production",
-                        "backups": local_snapshots
-                    })
-                    )
-
-    def apply_backup_policy(self, policy):
+    def store_backup_policy(self, service, policy):
+        """
+        Apply to the driver required policy
+        Update remote server policy
+        """
         self.driver.apply_backup_policy(policy)
+        update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service), policy)
 
-    def get_snapshots(self):
-        return self.driver.get_snapshots()
+    def get_snapshots(self, service):
+        return self.driver.get_snapshots(service)
+
+    def pull_recent_snapshots(self, service):
+        """
+        Retrieve latest snapshot from remote for the given service.
+        If is different than the last saved inside this container
+        Pull snapshots from one of the machines
+        """
+        local_snapshosts = self.get_snapshots(service)
+
+        local_latest_snap = get_latest_snapshot(local_snapshosts)
+        remote_latest_snap = get_latest_snapshot(retrieve_remote_snapshot_metadata(self.kv, service))
+
+        if local_latest_snap["date"] < remote_latest_snap["date"]:
+            server_list = get_server_list(self.kv, service, remote_latest_snap)
+
+            for server in server_list:
+                self.driver.pull(server, service)
+                # assuming always success
+                update_remote_metadata(self.kv, self.node, service, local_snapshosts)
+                return True
+
+        return False
 
     @staticmethod
-    def factory():
-        driver = SanoidBackupPlugin("/opt/sanoid/sanoid")
+    def factory(plugin_type):
+        driver = SanoidBackupPlugin("/opt/sanoid/sanoid", "/opt/sanoid/syncoid")
         cons = consul.Consul()
 
-        return BackupPlugin(cons, driver)
-
-
-if __name__ == "__main__":
-    backup = BackupPlugin.factory()
-
+        node = {
+            "Name": cons.agent.self()["Member"]["Name"],
+            "Address": cons.agent.self()["Member"]["Addr"],
+            "Type": plugin_type
+        }
+        return BackupPlugin(cons.kv, node, driver)

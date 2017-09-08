@@ -1,10 +1,8 @@
 #! /bin/usr/python
 
-# from .BackupPlugin import BackupPlugin
-
-import json
-
 from weir import zfs
+
+from .Utils import dataset_name
 
 """
 Backup plugin based on Sanoid, tool for ZFS
@@ -14,35 +12,35 @@ from subprocess import call
 
 
 class SanoidBackupPlugin(object):
-    def __init__(self, binary):
-        self.binary = binary
+    def __init__(self, sanoid_binary, syncoid_binary):
+        self.sanoid = sanoid_binary
+        self.syncoid = syncoid_binary
 
-    def take_snapshot(self, dataset=None, name=None):
-        if dataset and name:
+    def take_snapshot(self, service, name=None):
+        if name:
             print("Taking snapshot as requested")
-            call(["zfs", "snapshot", "%s@%s" % (dataset, name)])
+            call(["zfs", "snapshot", "%s@%s" % (dataset_name(service), name)])
             return True
         else:
             print("Activating policy daemon")
             # Rispetta le politiche
-            call([self.binary])
+            call([self.sanoid, "--cron"])
+            return True
 
-    def apply_backup_policy(self, policy):
-        with open('/etc/backy/backy.conf', 'w') as out:
-            json.dump(policy, out)
-
+    @staticmethod
+    def apply_backup_policy(service, policy):
         with open('/etc/sanoid/sanoid.conf', 'w') as out:
             out.write("""
         [{dataset}]
             use_template = production
             recursive = yes
 
-            hourly = {n_hour}
-            daily = {n_day}
-            monthly = {n_month}
-            yearly = {n_year}
-            autosnap = {take}
-            autoprune = {prune}
+            hourly = {p[n_hour]}
+            daily = {p[n_day]}
+            monthly = {p[n_month]}
+            yearly = {p[n_year]}
+            autosnap = {p[take]}
+            autoprune = {p[prune]}
 
         [template_production]
         	hourly = 36
@@ -51,14 +49,26 @@ class SanoidBackupPlugin(object):
         	yearly = 0
         	autosnap = yes
         	autoprune = yes
-        	""".format(**policy))
+        	""".format(dataset=dataset_name(service), p=policy))
 
-    def get_snapshots(self):
-        datasets = ["zpool-docker/myapp"]
+    def pull(self, server, service):
+        """
+        Pull all missing snapshots from the remote server
+        for the given service
+        """
+        server_data_set = "%s@%s:%s" % ("root", server, dataset_name(service))
+        local_data_set = dataset_name(service)
+        call([self.syncoid, server_data_set, local_data_set])
+
+        return True
+
+    @staticmethod
+    def get_snapshots(service):
+        datasets = [dataset_name(service)]
 
         snaps = {}
-        for dataset in datasets:
-            for snap in zfs.open(dataset).snapshots():
+        for ds in datasets:
+            for snap in zfs.open(ds).snapshots():
                 snaps[snap.name] = {
                     "date": snap.getprop("creation")["value"]
                 }
