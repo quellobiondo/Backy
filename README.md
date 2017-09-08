@@ -4,7 +4,7 @@ Distributed backup system for containerized systems.
 # Usage 
 Backy container has to execute as --privileged (because of ZFS).
 
---- CONSUL
+### CONSUL
 
 execute server
 docker run -d --name consul-server --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' -e 'CONSUL_HTTP_ADDR=192.168.33.105:8500' consul agent -server -bind=192.168.33.105 -bootstrap -ui -client=192.168.33.105
@@ -21,7 +21,8 @@ docker run -d \
     gliderlabs/registrator:latest \
       consul://localhost:8500
 ```
-execute Backy from docker
+### Backy
+
 ```
 docker build -t backy-service .
 docker run -d -it --name backy --net=host --privileged backy-service production zpool-docker/myapp
