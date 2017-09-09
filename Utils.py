@@ -1,8 +1,21 @@
 #! /bin/usr/python
 
+from weir import zfs
+
+zpool_name = "docker-zpool"
+
 
 def dataset_name(service):
-    return "docker-zpool/%s" % service
+    return "%s/%s" % (zpool_name, service)
+
+
+def init_dataset(service):
+    """
+    Create the dataset for the service if not exists
+    """
+    dataset = dataset_name(service)
+    if len(zfs.find(service, max_depth=1, types=['filesystem'])) == 0:
+        zfs.create(dataset)
 
 
 def tag_from_snapshot(snapshot):

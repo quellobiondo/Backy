@@ -11,6 +11,7 @@ import os
 import schedule
 
 import KVwrapper
+import Utils
 from BackupPlugin import BackupPlugin
 
 
@@ -62,6 +63,8 @@ def configure(arguments):
     backup = BackupPlugin.factory(service_type)
     configure_policy(backup, backup.kv, service_name, service_type)
 
+    Utils.init_dataset(service_name)
+
     activate_cron_job(backup, service_type, service_name)
 
     print("Press ENTER to end")
@@ -78,14 +81,6 @@ def activate_cron_job(backup, service_type, service_name):
     schedule.every(1).minutes.do(job)
 
 
-def check_backups_args(string):
-    return string
-
-
-def check_service(string):
-    return string
-
-
 if __name__ == "__main__":
     """
     Parse argument, load settings, apply to node
@@ -98,9 +93,9 @@ if __name__ == "__main__":
 
     parser_configure = subparsers.add_parser('configure')
     parser_configure.add_argument("type", choices=['production', 'backup'])
-    parser_configure.add_argument("-pp", "--policy_production", type=check_backups_args, default=None)
-    parser_configure.add_argument("-pb", "--policy_backup", type=check_backups_args, default=None)
-    parser_configure.add_argument("service", type=check_service)
+    parser_configure.add_argument("-pp", "--policy_production", default=None)
+    parser_configure.add_argument("-pb", "--policy_backup", default=None)
+    parser_configure.add_argument("service")
 
     args = parser.parse_args()
 
