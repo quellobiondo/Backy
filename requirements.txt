@@ -1,5 +1,7 @@
+consul
+crontab
 toml
-python-crontab
+schedule
 python-consul
 argparse
 weir

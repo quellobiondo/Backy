@@ -2,30 +2,22 @@
 
 import json
 
-from .Utils import tag_from_snapshot, synchronize_snapshots, get_latest_snapshot
-
-
-def snapshot_key(service):
-    """
-    :param service:
-    :return: the name of the snapshots key for the service on the KV-store
-    """
-    return "snapshots/%s" % service
+from Utils import tag_from_snapshot, synchronize_snapshots, get_latest_snapshot
 
 
 def service_key(service):
-    """
-    :param service:
-    :return: the name of the service key on the KV-store
-    """
     return 'services/%s' % service
 
 
+def snapshot_key(service):
+    return "%s/snapshots" % service_key(service)
+
+
+def policy_key(service):
+    return '%s/policy' % service_key(service)
+
+
 def node_key(node_name):
-    """
-    :param node_name:
-    :return: the name of the node key on the KV-store
-    """
     return 'nodes/%s' % node_name
 
 
@@ -54,7 +46,7 @@ def get_server_list(kv, service, snapshot):
     return snapshots[tag].get("server", [])
 
 
-def update_remote_metadata(kv, current_node, service, local_snapshots, policy=None):
+def update_remote_metadata(kv, current_node, service, local_snapshots):
     """
     Update metadata on the key-value store
     """
@@ -65,14 +57,10 @@ def update_remote_metadata(kv, current_node, service, local_snapshots, policy=No
 
     latest_snap = get_latest_snapshot(sync_result)
 
-    if policy is None:
-        policy = get_backup_policy(kv, service)
-
     kv.put(service_key(service),
            json.dumps(
                {
-                   "latest": latest_snap,
-                   "policy": policy
+                   "latest": latest_snap
                }
            )
            )
@@ -86,6 +74,13 @@ def update_remote_metadata(kv, current_node, service, local_snapshots, policy=No
            )
 
 
+def store_backup_policy(kv, service_name, policy):
+    """
+    Save the policy for the given service on the Key-Value store
+    """
+    kv.put(policy_key(service_name), json.dumps(policy))
+
+
 def get_backup_policy(kv, service):
     """
     Return the actual policy for that service registered on the key-value store
@@ -97,7 +92,6 @@ def get_backup_policy(kv, service):
             "daily": 5,
             "weekly": 1,
             "yearly": 0,
-            "frequency": 30
         },
         "backup": {
             "hourly": 10,
@@ -107,7 +101,7 @@ def get_backup_policy(kv, service):
         }
     }
 
-    index, value = kv.get(service_key(service))
+    index, value = kv.get(policy_key(service))
     if value:
         return value["Value"].get("policy", default_policy)
 

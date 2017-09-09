@@ -2,7 +2,7 @@
 
 from weir import zfs
 
-from .Utils import dataset_name
+from Utils import dataset_name
 
 """
 Backup plugin based on Sanoid, tool for ZFS

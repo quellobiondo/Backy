@@ -2,9 +2,9 @@
 
 import consul
 
-from plugin.backup.KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list
-from plugin.backup.Utils import dataset_name, get_latest_snapshot
-from .SanoidBackupPlugin import SanoidBackupPlugin
+from KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list
+from Utils import dataset_name, get_latest_snapshot
+from .plugin.SanoidBackupPlugin import SanoidBackupPlugin
 
 """
 Generic backup plugin
@@ -33,7 +33,7 @@ class BackupPlugin(object):
         Update remote server policy
         """
         self.driver.apply_backup_policy(policy)
-        update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service), policy)
+        update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service))
 
     def get_snapshots(self, service):
         return self.driver.get_snapshots(service)
