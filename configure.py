@@ -5,11 +5,10 @@ Backy: Backup as a service based on ZFS for containerized applications.
 """
 
 import argparse
-import logging
 import sys
 
 import os
-from crontab import CronTab
+import schedule
 
 import KVwrapper
 from BackupPlugin import BackupPlugin
@@ -63,33 +62,20 @@ def configure(arguments):
     backup = BackupPlugin.factory(service_type)
     configure_policy(backup, backup.kv, service_name, service_type)
 
-    activate_cron_job(service_type, service_name)
+    activate_cron_job(backup, service_type, service_name)
 
     print("Press ENTER to end")
     input()
 
 
-def activate_cron_job(service_type, service_name):
-    logging.debug("Activating automatic backup")
-    binary_path = os.path.abspath(os.path.dirname(sys.argv[0])) + "/" + sys.argv[0]
-    binary_args = "%s %s %s" % ("cron", service_type, service_name)
+def activate_cron_job(backup, service_type, service_name):
+    def job():
+        if service_type == "production":
+            backup.take_snapshot(service_name, "")
+        else:
+            backup.pull_recent_snapshots(service_name)
 
-    print("CronJob: %s %s" % (binary_path, binary_args))
-    binary = "%s %s" % (binary_path, binary_args)
-
-    backup_job = CronTab(user="root")
-    job = backup_job.new(command="/usr/bin/python3 " + binary)
-    job.minute.every(1)
-    backup_job.write()
-
-    logging.debug(backup_job)
-
-
-def do_cron_job(arguments):
-    if arguments.type == "production":
-        BackupPlugin.factory(arguments.type).take_snapshot(arguments.service, "")
-    else:
-        BackupPlugin.factory(arguments.type).pull_recent_snapshots(arguments.service)
+    schedule.every(1).minutes.do(job)
 
 
 def check_backups_args(string):
@@ -116,13 +102,6 @@ if __name__ == "__main__":
     parser_configure.add_argument("-pb", "--policy_backup", type=check_backups_args, default=None)
     parser_configure.add_argument("service", type=check_service)
 
-    parser_cron = subparsers.add_parser('cron')
-    parser_cron.add_argument("type", choices=['production', 'backup'])
-    parser_cron.add_argument("service", type=check_service)
-
     args = parser.parse_args()
 
-    if args.possibilita == "cron":
-        do_cron_job(args)
-    elif args.possibilita == "configure":
-        configure(args)
+    configure(args)
