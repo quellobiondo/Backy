@@ -1,26 +1,22 @@
 # Backy
 Distributed backup system for containerized systems.
 
+# Prerequisites
+
+- Python3, python-pip3
+- Root password-less SSH access to all machines
+- Consul server running
+- Consul client running on the same node
+- ZPool zpool-docker on each machine
+- Service's dataset not existing on all backup machines (syncoid prerequisite)
+
+With the vagrant image everything is provided exept the root password-less login
+between machines (you have to edit manually sshd conf and ssh-copy-id the keys for each machine)
+
 # Usage 
 Backy container has to execute as --privileged (because of ZFS).
 
-### CONSUL
 
-execute server
-docker run -d --name consul-server --net=host -e 'CONSUL_LOCAL_CONFIG={"skip_leave_on_interrupt": true}' -e 'CONSUL_HTTP_ADDR=192.168.33.105:8500' consul agent -server -bind=192.168.33.105 -bootstrap -ui -client=192.168.33.105
-
-execute client
-docker run -d --net=host -e 'CONSUL_LOCAL_CONFIG={"leave_on_terminate": true}' --name consul_client consul agent -bind=192.168.33.102 -retry-join=192.168.33.105
-
-Service autodiscovery -- registrator
-```
-docker run -d \
-    --name=registrator \
-    --net=host \
-    --volume=/var/run/docker.sock:/tmp/docker.sock \
-    gliderlabs/registrator:latest \
-      consul://localhost:8500
-```
 ### Backy
 
 ```

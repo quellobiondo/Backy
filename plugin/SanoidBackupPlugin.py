@@ -16,6 +16,12 @@ class SanoidBackupPlugin(object):
         self.sanoid = sanoid_binary
         self.syncoid = syncoid_binary
 
+    def remove_syncoid_snapshots(self, dataset):
+        pattern_syncoid = "%s@syncoid" % dataset
+        for snap in zfs.open(dataset).snapshots():
+            if pattern_syncoid in snap.name:
+                snap.destroy(True, True)
+
     def take_snapshot(self, service, name=None):
         if name:
             print("Taking snapshot as requested")
@@ -23,6 +29,9 @@ class SanoidBackupPlugin(object):
             return True
         else:
             print("Activating policy daemon")
+            # voglio rimuovere tutti gli snapshots di syncoid (altrimenti mi porterebbero a dei conflitti)
+            self.remove_syncoid_snapshots(service)
+
             # Rispetta le politiche
             call([self.sanoid, "--cron"])
             return True
@@ -59,6 +68,8 @@ class SanoidBackupPlugin(object):
         print("Pulling from %s --> %s" % (server_data_set, local_data_set))
         call([self.syncoid, server_data_set, local_data_set])
 
+        # voglio rimuovere tutti gli snapshots di syncoid (altrimenti mi porterebbero a dei conflitti)
+        self.remove_syncoid_snapshots(service)
         return True
 
     @staticmethod

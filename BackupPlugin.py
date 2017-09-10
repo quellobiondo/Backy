@@ -36,7 +36,10 @@ class BackupPlugin(object):
         update_remote_metadata(self.kv, self.node, service_name, self.get_snapshots(service_name))
 
     def get_snapshots(self, service):
-        return self.driver.get_snapshots(service)
+        try:
+            return self.driver.get_snapshots(service)
+        except Exception:
+            return {}
 
     def pull_recent_snapshots(self, service):
         """

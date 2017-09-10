@@ -61,7 +61,7 @@ def configure(arguments):
     service_name = arguments.service
     service_type = arguments.type
 
-    Utils.init_dataset(service_name)
+    Utils.init_dataset(service_name, service_type)
 
     backup = BackupPlugin.factory(service_type)
     configure_policy(backup, backup.kv, service_name, service_type)

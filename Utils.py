@@ -9,10 +9,14 @@ def dataset_name(service):
     return "%s/%s" % (zpool_name, service)
 
 
-def init_dataset(service):
+def init_dataset(service, service_type):
     """
-    Create the dataset for the service if not exists
+    Create the dataset for the service if it is of type
+    production and the dataset doesn't exist
     """
+    if service_type == "backup":
+        return
+
     dataset = dataset_name(service)
     try:
         zfs.find(dataset, types=['filesystem'])
