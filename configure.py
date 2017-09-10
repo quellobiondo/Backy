@@ -6,6 +6,7 @@ Backy: Backup as a service based on ZFS for containerized applications.
 
 import argparse
 import sys
+import time
 
 import os
 import schedule
@@ -35,7 +36,7 @@ def parse_policy(from_args, environ_key):
     policy = {
         "hourly": values[0],
         "daily": values[1],
-        "weekly": values[2],
+        "monthly": values[2],
         "yearly": values[3]
     }
     return policy
@@ -53,32 +54,37 @@ def configure_policy(backup, kv, service_name, service_type):
     else:
         policy = KVwrapper.get_backup_policy(kv, service_name)
 
-    backup.store_backup_policy(service_name, policy)
+    backup.store_backup_policy(service_name, service_type, policy)
 
 
 def configure(arguments):
     service_name = arguments.service
     service_type = arguments.type
 
+    Utils.init_dataset(service_name)
+
     backup = BackupPlugin.factory(service_type)
     configure_policy(backup, backup.kv, service_name, service_type)
 
-    Utils.init_dataset(service_name)
-
     activate_cron_job(backup, service_type, service_name)
 
-    print("Press ENTER to end")
-    input()
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
 
 def activate_cron_job(backup, service_type, service_name):
     def job():
+        print("Doing cron job...")
         if service_type == "production":
+            print("Taking snapshots...")
             backup.take_snapshot(service_name, "")
         else:
+            print("Pulling recent snapshots...")
             backup.pull_recent_snapshots(service_name)
 
     schedule.every(1).minutes.do(job)
+    job()
 
 
 if __name__ == "__main__":
@@ -99,4 +105,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    configure(args)
+    if args.possibilita == "configure":
+        try:
+            configure(args)
+        except ConnectionError:
+            print("ConnectionRefusedError (Are consul client and server active and configured?)")
+    else:
+        parser.print_usage()

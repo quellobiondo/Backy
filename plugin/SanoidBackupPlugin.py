@@ -35,13 +35,11 @@ class SanoidBackupPlugin(object):
             use_template = production
             recursive = yes
 
-            hourly = {p[n_hour]}
-            daily = {p[n_day]}
-            monthly = {p[n_month]}
-            yearly = {p[n_year]}
-            autosnap = {p[take]}
-            autoprune = {p[prune]}
-
+            hourly = {p[hourly]}
+            daily = {p[daily]}
+            monthly = {p[monthly]}
+            yearly = {p[yearly]}
+            
         [template_production]
         	hourly = 36
         	daily = 30

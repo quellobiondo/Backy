@@ -2,7 +2,7 @@
 
 from weir import zfs
 
-zpool_name = "docker-zpool"
+zpool_name = "zpool-docker"
 
 
 def dataset_name(service):
@@ -14,7 +14,9 @@ def init_dataset(service):
     Create the dataset for the service if not exists
     """
     dataset = dataset_name(service)
-    if len(zfs.find(service, max_depth=1, types=['filesystem'])) == 0:
+    try:
+        zfs.find(dataset, types=['filesystem'])
+    except Exception:
         zfs.create(dataset)
 
 
@@ -28,7 +30,7 @@ def synchronize_snapshots(local_snaps, remote_snaps, server_name):
     - removing the snapshots
     """
     for rem in remote_snaps:
-        if local_snaps[rem]:
+        if local_snaps.get(rem, None):
             # Esiste in locale lo snapshot con il tag rem.tag
             if server_name not in remote_snaps[rem]["server"]:
                 remote_snaps[rem]["server"].append(server_name)
@@ -47,6 +49,7 @@ def synchronize_snapshots(local_snaps, remote_snaps, server_name):
 def get_latest_snapshot(snaps):
     latest = None
     for sn in snaps:
-        if latest is None or int(snaps[latest]["date"]) < int(snaps[sn]["date"]):
-            latest = sn
+        if latest is None or int(latest["date"]) < int(snaps[sn]["date"]):
+            latest = snaps[sn]
+
     return latest

@@ -4,7 +4,7 @@ import consul
 
 from KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list
 from Utils import dataset_name, get_latest_snapshot
-from .plugin.SanoidBackupPlugin import SanoidBackupPlugin
+from plugin.SanoidBackupPlugin import SanoidBackupPlugin
 
 """
 Generic backup plugin
@@ -27,13 +27,13 @@ class BackupPlugin(object):
         self.driver.take_snapshot(dataset_name(service), name)
         update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service))
 
-    def store_backup_policy(self, service, policy):
+    def store_backup_policy(self, service_name, service_type, policy):
         """
         Apply to the driver required policy
         Update remote server policy
         """
-        self.driver.apply_backup_policy(policy)
-        update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service))
+        self.driver.apply_backup_policy(service_name, policy[service_type])
+        update_remote_metadata(self.kv, self.node, service_name, self.get_snapshots(service_name))
 
     def get_snapshots(self, service):
         return self.driver.get_snapshots(service)
@@ -49,7 +49,8 @@ class BackupPlugin(object):
         local_latest_snap = get_latest_snapshot(local_snapshosts)
         remote_latest_snap = get_latest_snapshot(retrieve_remote_snapshot_metadata(self.kv, service))
 
-        if local_latest_snap["date"] < remote_latest_snap["date"]:
+        if remote_latest_snap and local_latest_snap \
+                and local_latest_snap["date"] < remote_latest_snap["date"]:
             server_list = get_server_list(self.kv, service, remote_latest_snap)
 
             for server in server_list:

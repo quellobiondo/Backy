@@ -15,13 +15,9 @@ fallocate -l 2GB "$VOLUME_PATH/$DISK_NAME"
 
 zpool create -f zpool-docker -m /zpool-docker "$VOLUME_PATH/$DISK_NAME"
 
-# echo "Configuring Docker with ZFS...\n"
-# service docker stop
-# rm -rf /var/lib/docker/*
-
-# echo '{ "storage-driver":"zfs" }' > /etc/docker/daemon.json
-
 service docker start
+
+apt-get install python3-pip
 
 echo "Intalling Sanoid"
 apt-get install -y libconfig-inifiles-perl git lzop mbuffer
@@ -32,3 +28,8 @@ ln /opt/sanoid/syncoid /usr/sbin/
 
 mkdir -p /etc/sanoid
 cp /opt/sanoid/sanoid*.conf /etc/sanoid/
+
+echo "Activating consul client"
+docker run -d --net=host -e 'CONSUL_LOCAL_CONFIG={"leave_on_terminate": true}' \
+--name consul_client consul agent -bind=$1 \
+-retry-join=$2

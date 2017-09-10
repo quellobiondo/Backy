@@ -29,8 +29,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           cfg.vm.provision "rancher" do |rancher|
               rancher.hostname = info[:ip]
           end
+          cfg.vm.provision :shell, path: "vagrant_scripts/consul_server_init.sh", args: "%{machine_address}" % {:machine_address => '192.168.33.105'}
         else
-          cfg.vm.provision :shell, path: "vagrant_scripts/bootstrap.sh"
+          cfg.vm.provision :shell, path: "vagrant_scripts/bootstrap.sh",
+            args:  "%{machine_address} %{consul_server_address}" %
+                {:machine_address => info[:ip], :consul_server_address => "192.168.33.105"}
 
           cfg.vm.provision "rancher" do |rancher|
               #rancher.hostname = rancher_node[:ip]

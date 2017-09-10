@@ -84,25 +84,6 @@ def store_backup_policy(kv, service_name, policy):
 def get_backup_policy(kv, service):
     """
     Return the actual policy for that service registered on the key-value store
-    or the default policy if it doesn't exist
     """
-    default_policy = {
-        "production": {
-            "hourly": 10,
-            "daily": 5,
-            "weekly": 1,
-            "yearly": 0,
-        },
-        "backup": {
-            "hourly": 10,
-            "daily": 5,
-            "weekly": 2,
-            "yearly": 1
-        }
-    }
-
     index, value = kv.get(policy_key(service))
-    if value:
-        return value["Value"].get("policy", default_policy)
-
-    return default_policy
+    return json.loads(value["Value"].decode('utf-8'))
