@@ -2,7 +2,7 @@
 
 import json
 
-from Utils import tag_from_snapshot, synchronize_snapshots, get_latest_snapshot
+from Utils import synchronize_snapshots, get_latest_snapshot
 
 
 def service_key(service):
@@ -20,6 +20,20 @@ def policy_key(service):
 def node_key(node_name):
     return 'nodes/%s' % node_name
 
+
+def get_node_meta(kv, node):
+    """
+    Get metadata for the given node from key-value store
+    """
+    index, value = kv.get(node_key(node))
+    if not value:
+        value = {"Value": ""}
+
+    meta = value["Value"]
+    if meta:
+        return json.loads(meta.decode('utf-8'))
+    else:
+        return {}
 
 def retrieve_remote_snapshot_metadata(kv, service):
     """
@@ -42,8 +56,9 @@ def get_server_list(kv, service, snapshot):
     Return the servers that have that snapshot
     """
     snapshots = retrieve_remote_snapshot_metadata(kv, service)
-    tag = tag_from_snapshot(snapshot)
-    return snapshots[tag].get("server", [])
+    # print("Snapshots %s" % snapshots)
+    # tag = tag_from_snapshot(snapshot)
+    return snapshots[snapshot].get("server", [])
 
 
 def update_remote_metadata(kv, current_node, service, local_snapshots):
@@ -69,6 +84,7 @@ def update_remote_metadata(kv, current_node, service, local_snapshots):
            json.dumps(
                {
                    "type": current_node["Type"],
+                   "address": current_node["Address"],
                    "backups": local_snapshots
                })
            )

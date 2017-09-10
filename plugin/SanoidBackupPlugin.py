@@ -56,6 +56,7 @@ class SanoidBackupPlugin(object):
         """
         server_data_set = "%s@%s:%s" % ("root", server, dataset_name(service))
         local_data_set = dataset_name(service)
+        print("Pulling from %s --> %s" % (server_data_set, local_data_set))
         call([self.syncoid, server_data_set, local_data_set])
 
         return True

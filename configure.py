@@ -83,7 +83,7 @@ def activate_cron_job(backup, service_type, service_name):
             print("Pulling recent snapshots...")
             backup.pull_recent_snapshots(service_name)
 
-    schedule.every(1).minutes.do(job)
+    schedule.every(10).minutes.do(job)
     job()
 
 

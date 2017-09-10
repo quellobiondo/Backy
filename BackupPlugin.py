@@ -2,7 +2,7 @@
 
 import consul
 
-from KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list
+from KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list, get_node_meta
 from Utils import dataset_name, get_latest_snapshot
 from plugin.SanoidBackupPlugin import SanoidBackupPlugin
 
@@ -45,16 +45,23 @@ class BackupPlugin(object):
         Pull snapshots from one of the machines
         """
         local_snapshosts = self.get_snapshots(service)
-
+        remote_snapshots = retrieve_remote_snapshot_metadata(self.kv, service)
         local_latest_snap = get_latest_snapshot(local_snapshosts)
-        remote_latest_snap = get_latest_snapshot(retrieve_remote_snapshot_metadata(self.kv, service))
+        remote_latest_snap = get_latest_snapshot(remote_snapshots)
 
-        if remote_latest_snap and local_latest_snap \
-                and local_latest_snap["date"] < remote_latest_snap["date"]:
+        print("Pulling snaps ? %s %s" % (local_latest_snap, remote_latest_snap))
+        if not remote_latest_snap:
+            return False
+
+        if not local_latest_snap or \
+                        local_snapshosts[local_latest_snap]["date"] < remote_snapshots[remote_latest_snap]["date"]:
+
             server_list = get_server_list(self.kv, service, remote_latest_snap)
-
+            print("From who? %s " % server_list)
             for server in server_list:
-                self.driver.pull(server, service)
+                server_meta = get_node_meta(self.kv, server)
+                server_addr = server_meta["address"]
+                self.driver.pull(server_addr, service)
                 # assuming always success
                 update_remote_metadata(self.kv, self.node, service, local_snapshosts)
                 return True

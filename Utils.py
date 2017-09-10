@@ -49,7 +49,7 @@ def synchronize_snapshots(local_snaps, remote_snaps, server_name):
 def get_latest_snapshot(snaps):
     latest = None
     for sn in snaps:
-        if latest is None or int(latest["date"]) < int(snaps[sn]["date"]):
-            latest = snaps[sn]
+        if latest is None or int(snaps[latest]["date"]) < int(snaps[sn]["date"]):
+            latest = sn
 
     return latest
