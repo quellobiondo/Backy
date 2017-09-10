@@ -44,5 +44,3 @@ RUN pip3 install -r requirements.txt
 
 # Define default command.
 ENTRYPOINT ["python3", "configure.py", "configure"]
-
-CMD ["production", "zpool-docker/myapp"]

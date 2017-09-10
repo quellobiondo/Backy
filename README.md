@@ -14,13 +14,30 @@ With the vagrant image everything is provided exept the root password-less login
 between machines (you have to edit manually sshd conf and ssh-copy-id the keys for each machine)
 
 # Usage 
-Backy container has to execute as --privileged (because of ZFS).
+How to setup backup policy (**ONLY** on boot of production container)
+
+#### Command line arguments: 
+    -pb or --policy-backup 
+    -pp or --policy-production 
+
+#### Environment variables: 
+PRODUCTION_POLICY and BACKUP_POLICY
+
+#### Values
+"Hourly_backups   Daily_backups   Monthly_backups   Yearly_backups"
+
+All values are integers, separated by spaces inside the same string
+
+##### example 
+`python3 configure.py configure production -pp="10 5 2 1" -pb "10 5 2 1" myapp`
+
 
 
 ### Backy
 
+Backy container has to execute as --privileged (because of ZFS).
+
 ```
 docker build -t backy-service .
-docker run -d -it --name backy --net=host --privileged backy-service production zpool-docker/myapp
-docker exec -it backy /bin/bash
+docker run -d -it --rm --name -e PRODUCTION_POLICY="10 5 2 1" -e BACKUP_POLICY="15 5 2 2" backy --net=host --privileged backy-service production myapp
 ```

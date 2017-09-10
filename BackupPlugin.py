@@ -1,5 +1,7 @@
 #! /bin/usr/python
 
+from random import shuffle
+
 import consul
 
 from KVwrapper import retrieve_remote_snapshot_metadata, update_remote_metadata, get_server_list, get_node_meta
@@ -60,6 +62,8 @@ class BackupPlugin(object):
                         local_snapshosts[local_latest_snap]["date"] < remote_snapshots[remote_latest_snap]["date"]:
 
             server_list = get_server_list(self.kv, service, remote_latest_snap)
+            # randomize list
+            shuffle(server_list)
             print("From who? %s " % server_list)
             for server in server_list:
                 server_meta = get_node_meta(self.kv, server)
