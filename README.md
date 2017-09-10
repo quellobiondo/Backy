@@ -30,7 +30,7 @@ ex: myapp -> dataset="zpool-docker/myapp"
 
 ```
 docker build -t backy-service .
-docker run -d -it --rm --name -e PRODUCTION_POLICY="10 5 2 1" -e BACKUP_POLICY="15 5 2 2" backy --net=host --privileged backy-service production myapp
+docker run -d -it --rm --name backy -e PRODUCTION_POLICY="10 5 2 1" -e BACKUP_POLICY="15 5 2 2" --net=host --privileged backy-service production myapp
 ```
 ### Backup policy
 How to setup backup policy (**ONLY** on boot of production container)
