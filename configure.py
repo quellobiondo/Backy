@@ -43,6 +43,14 @@ def parse_policy(from_args, environ_key):
 
 
 def configure_policy(backup, kv, service_name, service_type):
+    """
+    If service of type production
+        - Retrieve policy from command line arguments or from environment variables
+        - Store policies on kv store and locally
+    If service of type backup
+        - Retrieve policy from kv store
+        - Copy backup policy locally
+    """
     if service_type == "production":
         environ_key_policy_production = "PRODUCTION_POLICY"
         environ_key_policy_backup = "BACKUP_POLICY"
@@ -58,6 +66,12 @@ def configure_policy(backup, kv, service_name, service_type):
 
 
 def configure(arguments):
+    """
+    Initialize ZFS (create dataset etc.)
+    Create backup object
+    Store policy locally and eventually on kvstore
+    Activate the cron job to repeat the task
+    """
     service_name = arguments.service
     service_type = arguments.type
 
@@ -74,6 +88,11 @@ def configure(arguments):
 
 
 def activate_cron_job(backup, service_type, service_name):
+    """
+    Schedule a function to be repeated each 10 minutes
+    to check if it have to take more snapshot (if of type production)
+    or to pull snapshots (if of type backup)
+    """
     def job():
         print("Doing cron job...")
         if service_type == "production":
@@ -89,7 +108,7 @@ def activate_cron_job(backup, service_type, service_name):
 
 if __name__ == "__main__":
     """
-    Parse argument, load settings, apply to node
+    Parse command line argument and boot application
     """
     parser = argparse.ArgumentParser(sys.argv)
     parser.add_argument("-v", "--verbose", help="increase output verbosity",

@@ -13,16 +13,27 @@ from subprocess import call
 
 class SanoidBackupPlugin(object):
     def __init__(self, sanoid_binary, syncoid_binary):
+        """
+        Save the path of sanoid and syncoid binaries
+        """
         self.sanoid = sanoid_binary
         self.syncoid = syncoid_binary
 
     def remove_syncoid_snapshots(self, dataset):
+        """
+        Find all snapshots of syncoid and delete them.
+        We just want to preserve scheduled snapshots
+        """
         pattern_syncoid = "%s@syncoid" % dataset
         for snap in zfs.open(dataset).snapshots():
             if pattern_syncoid in snap.name:
                 snap.destroy(True, True)
 
     def take_snapshot(self, service, name=None):
+        """
+        Take snapshot using sanoid service if name=None
+        Otherwise we take a snapshot with the given tag
+        """
         if name:
             print("Taking snapshot as requested")
             call(["zfs", "snapshot", "%s@%s" % (dataset_name(service), name)])
@@ -38,6 +49,10 @@ class SanoidBackupPlugin(object):
 
     @staticmethod
     def apply_backup_policy(service, policy):
+        """
+        Store the policy inside sanoid configuration file
+        """
+
         with open('/etc/sanoid/sanoid.conf', 'w') as out:
             out.write("""
         [{dataset}]
@@ -74,6 +89,9 @@ class SanoidBackupPlugin(object):
 
     @staticmethod
     def get_snapshots(service):
+        """
+        Return all the snapshots on this node for the given service
+        """
         datasets = [dataset_name(service)]
 
         snaps = {}

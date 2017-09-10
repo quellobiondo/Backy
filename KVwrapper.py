@@ -35,6 +35,7 @@ def get_node_meta(kv, node):
     else:
         return {}
 
+
 def retrieve_remote_snapshot_metadata(kv, service):
     """
     Get all snapshots for that service from key-value store
@@ -63,7 +64,7 @@ def get_server_list(kv, service, snapshot):
 
 def update_remote_metadata(kv, current_node, service, local_snapshots):
     """
-    Update metadata on the key-value store
+    Update snapshots and node metadata on the key-value store
     """
 
     all_snapshots = retrieve_remote_snapshot_metadata(kv, service)

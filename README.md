@@ -13,9 +13,31 @@ Distributed backup system for containerized systems.
 With the vagrant image everything is provided exept the root password-less login
 between machines (you have to edit manually sshd conf and ssh-copy-id the keys for each machine)
 
-# Usage 
+# Usage
+
+Backy container has to execute as --privileged (because of ZFS).
+
+`backy <type of service> <name of service>`
+
+Backup policy decided as below.
+
+type of service: "production" or "backup", production take snapshots, backup just replicate them
+
+name of service: the name of the service that you want to backup, it will decide the name of the dataset
+
+ex: myapp -> dataset="zpool-docker/myapp"
+
+
+```
+docker build -t backy-service .
+docker run -d -it --rm --name -e PRODUCTION_POLICY="10 5 2 1" -e BACKUP_POLICY="15 5 2 2" backy --net=host --privileged backy-service production myapp
+```
+### Backup policy
 How to setup backup policy (**ONLY** on boot of production container)
 
+both policies have to be set on the boot-up of the production service
+
+Precedence on command line arguments.
 #### Command line arguments: 
     -pb or --policy-backup 
     -pp or --policy-production 
@@ -29,15 +51,5 @@ PRODUCTION_POLICY and BACKUP_POLICY
 All values are integers, separated by spaces inside the same string
 
 ##### example 
-`python3 configure.py configure production -pp="10 5 2 1" -pb "10 5 2 1" myapp`
+`production -pp="10 5 2 1" -pb "10 5 2 1" myapp`
 
-
-
-### Backy
-
-Backy container has to execute as --privileged (because of ZFS).
-
-```
-docker build -t backy-service .
-docker run -d -it --rm --name -e PRODUCTION_POLICY="10 5 2 1" -e BACKUP_POLICY="15 5 2 2" backy --net=host --privileged backy-service production myapp
-```

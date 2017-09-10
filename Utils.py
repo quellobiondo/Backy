@@ -24,14 +24,9 @@ def init_dataset(service, service_type):
         zfs.create(dataset)
 
 
-def tag_from_snapshot(snapshot):
-    return snapshot.split('@', 1)[1]
-
-
 def synchronize_snapshots(local_snaps, remote_snaps, server_name):
     """
     Synchronize all the snapshots metadata to the remote machine
-    - removing the snapshots
     """
     for rem in remote_snaps:
         if local_snaps.get(rem, None):
@@ -51,6 +46,9 @@ def synchronize_snapshots(local_snaps, remote_snaps, server_name):
 
 
 def get_latest_snapshot(snaps):
+    """
+    Return the name of the latest snapshot in a list of snapshots
+    """
     latest = None
     for sn in snaps:
         if latest is None or int(snaps[latest]["date"]) < int(snaps[sn]["date"]):

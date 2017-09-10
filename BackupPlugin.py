@@ -23,21 +23,29 @@ class BackupPlugin(object):
         self.node = node
 
     def get_remote_snapshots(self, service):
+        """
+        Return all the snapshots from the kv-store
+        """
         return retrieve_remote_snapshot_metadata(self.kv, service)
 
     def take_snapshot(self, service, name=None):
+        """
+        Take a snapshot and update kv-store metadata
+        """
+
         self.driver.take_snapshot(dataset_name(service), name)
         update_remote_metadata(self.kv, self.node, service, self.get_snapshots(service))
 
     def store_backup_policy(self, service_name, service_type, policy):
         """
         Apply to the driver required policy
-        Update remote server policy
         """
         self.driver.apply_backup_policy(service_name, policy[service_type])
-        update_remote_metadata(self.kv, self.node, service_name, self.get_snapshots(service_name))
 
     def get_snapshots(self, service):
+        """
+        Return local snapshots for the given service using underlying plugin
+        """
         try:
             return self.driver.get_snapshots(service)
         except Exception:
@@ -77,6 +85,12 @@ class BackupPlugin(object):
 
     @staticmethod
     def factory(plugin_type):
+        """
+        Return a Backup object with its driver (Sanoid/Syncoid)
+        a kv-store (Consul) and meta-data for the node in which
+        this service is execute (retrieved by consul)
+        """
+
         driver = SanoidBackupPlugin("/opt/sanoid/sanoid", "/opt/sanoid/syncoid")
         cons = consul.Consul()
 
